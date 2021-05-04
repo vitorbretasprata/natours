@@ -1,10 +1,15 @@
-import express from "express";
 import fs from "fs";
+import dotenv from "dotenv";
+import express from "express";
+
 
 const app = express();
-const port = 3000;
+dotenv.config();
 
 app.use(express.json());
+app.use((req, res, next) => {
+
+});
 
 const tours = JSON.parse(
     fs.readFileSync(`${__dirname}/dev-data/data/tours-simple.json`).toString()
@@ -106,6 +111,6 @@ app.delete("/api/v1/tours/:id", (req, res) => {
 
 });
 
-app.listen(port, () => {
-    console.log(`Port is listening on ${port}...`)
+app.listen(process.env.SERVER_PORT, () => {
+    console.log(`Port is listening on ${process.env.SERVER_PORT}...`)
 })
