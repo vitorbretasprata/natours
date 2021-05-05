@@ -5,10 +5,14 @@ import tourController from "../controllers/tour";
 const controller = new tourController();
 const router = express.Router();
 
+router.param("id", (req, res, next, val) => {
+    next();
+});
+
 router
     .route("/")
     .get(controller.getAll)
-    .post(controller.create)
+    .post(controller.checkBody, controller.create)
 
 router
     .route("/:id")
