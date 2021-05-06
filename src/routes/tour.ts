@@ -12,7 +12,7 @@ router.param("id", (req, res, next, val) => {
 router
     .route("/")
     .get(controller.getAll)
-    .post(controller.checkBody, controller.create)
+    .post(controller.create)
 
 router
     .route("/:id")

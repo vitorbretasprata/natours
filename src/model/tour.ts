@@ -3,7 +3,7 @@ import mongoose from "mongoose";
 const tourSchema = new mongoose.Schema({
     name: {
         type: String,
-        required: [true, "Atour must have a name"],
+        required: [true, "A tour must have a name"],
         unique: true
     },
     rating: {

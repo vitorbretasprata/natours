@@ -1,43 +1,10 @@
 import { Request, Response, NextFunction } from 'express';
-import fs from "fs";
+import Tour from "../model/tour";
 
 export default class TourController  {
 
-    private tours;
-
     constructor() {
-        this.tours = JSON.parse(
-            fs.readFileSync(`${process.env.ROOT_PROJECT}/dev-data/data/tours-simple.json`).toString()
-        );
-    }
-
-    /**
-     * name
-     */
-    public checkId(req : Request, res : Response, next : NextFunction, val: string) {
-        const calInt = parseInt(val, 10);
-
-        if(calInt > this.tours.length) {
-            return res.status(404).json({
-                status: 'Not Found'
-            });
-        }
-
-        next();
-    }
-
-    /**
-     * name
-     */
-     public checkBody(req : Request, res : Response, next : NextFunction) {
-
-        if(!req.body.name || !req.body.price) {
-            return res.status(404).json({
-                status: 'Missing price or name'
-            });
-        }
-
-        next();
+        
     }
 
     /**
@@ -46,48 +13,39 @@ export default class TourController  {
     public getAll(req : Request, res : Response, next : NextFunction) {
 
         res.status(200).json({
-            status: 'success',
-            results: this.tours.length,
-            data: {
-                tour: this.tours
-            }
+            status: 'success'
         });
     }
 
     /**
      * name
      */
-    public create(req : Request, res : Response, next : NextFunction) {
-        const newId = this.tours[this.tours.length - 1].id + 1;
-        const newTour = Object.assign({ id: newId }, req.body);
+    public async create(req : Request, res : Response, next : NextFunction) {
 
-        this.tours.push(newTour);
+        try {
+            const newTour = await Tour.create(req.body);
 
-        fs.writeFile(
-            `${__dirname}/dev-data/data/tours-simple.json`,
-            JSON.stringify(this.tours), 
-            err => {
-                res.status(201).json({
-                    status: 'success',
-                    data: {
-                        tour: newTour
-                    }
-                });
-            }
-        );
+            res.status(201).json({
+                status: 'success',
+                data: {
+                    id: newTour.id
+                }
+            });
+        } catch (err) {
+            res.status(400).json({
+                status: "failed",
+                message: err.massage
+            });
+        }
     }
 
     /**
      * name
      */
     public get(req : Request, res : Response, next : NextFunction) {
-        const id = parseInt(req.params.id, 10);
-
-        const tour = this.tours.find((t : any) => t.id === id);
 
         res.status(200).json({
-            status: 'success',
-            data: { tour }
+            status: 'success'
         });
     }
 
@@ -95,22 +53,15 @@ export default class TourController  {
      * name
      */
     public update(req : Request, res : Response, next : NextFunction) {
-        const id = parseInt(req.params.id, 10);
 
-        if(id > this.tours.length) {
-            res.status(500).json({
-                status: 'Failed',
-                message: "Invalid ID"
-            });
-        }
+        res.status(500).json({
+            status: 'Failed',
+            message: "Invalid ID"
+        });
 
-        const tour = this.tours.find((t : any) => t.id === id);
 
         res.status(201).json({
-            status: 'success',
-            data: {
-                tour: tour
-            }
+            status: 'success'
         });
     }
 
@@ -118,9 +69,6 @@ export default class TourController  {
      * name
      */
     public delete(req : Request, res : Response, next : NextFunction) {
-        const id = parseInt(req.params.id, 10);
-
-        const tour = this.tours.find((t : any) => t.id === id);
 
         res.status(204).json({
             status: 'success',
