@@ -10,17 +10,32 @@ export default class TourController  {
     /**
      * name
      */
-    public getAll(req : Request, res : Response, next : NextFunction) {
+    public async getAll(req : Request, res : Response) {
 
-        res.status(200).json({
-            status: 'success'
-        });
+        try {
+            const tours = await Tour.find();
+
+            const queryObj =  {... req.query}
+
+            res.status(200).json({
+                status: 'success',
+                results: tours.length,
+                data: { 
+                    tours
+                }
+            });
+        } catch (err) {
+            res.status(404).json({
+                status: "failed",
+                message: err.massage
+            });
+        }
     }
 
     /**
      * name
      */
-    public async create(req : Request, res : Response, next : NextFunction) {
+    public async create(req : Request, res : Response) {
 
         try {
             const newTour = await Tour.create(req.body);
@@ -42,38 +57,68 @@ export default class TourController  {
     /**
      * name
      */
-    public get(req : Request, res : Response, next : NextFunction) {
+    public async get(req : Request, res : Response) {
 
-        res.status(200).json({
-            status: 'success'
-        });
+        try {
+            const tours = await Tour.findById(req.params.id);
+
+            res.status(200).json({
+                status: 'success',
+                data: { 
+                    tours
+                }
+            });
+        } catch (err) {
+            res.status(404).json({
+                status: "failed",
+                message: err.massage
+            });
+        }
     }
 
     /**
      * name
      */
-    public update(req : Request, res : Response, next : NextFunction) {
+    public async update(req : Request, res : Response) {
 
-        res.status(500).json({
-            status: 'Failed',
-            message: "Invalid ID"
-        });
+        try {
+            const tour = await Tour.findByIdAndUpdate(req.params.id, req.body, {
+                new: true,
+                runValidators: true
+            });
 
-
-        res.status(201).json({
-            status: 'success'
-        });
+            res.status(200).json({
+                status: 'success',
+                data: { 
+                    tour
+                }
+            });
+        } catch (err) {
+            res.status(404).json({
+                status: "failed",
+                message: err.massage
+            });
+        }
     }
 
     /**
      * name
      */
-    public delete(req : Request, res : Response, next : NextFunction) {
+    public async delete(req : Request, res : Response) {
 
-        res.status(204).json({
-            status: 'success',
-            data: null
-        });
+        try {
+            await Tour.findByIdAndDelete(req.params.id);
+
+            res.status(204).json({
+                status: 'success',
+                data: null
+            });
+        } catch (err) {
+            res.status(404).json({
+                status: "failed",
+                message: err.massage
+            });
+        }
     }
 
 }
