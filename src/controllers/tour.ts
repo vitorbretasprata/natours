@@ -1,10 +1,50 @@
-import { Request, Response, NextFunction } from 'express';
+import { NextFunction, Request, Response } from 'express';
+import APIFeatures from '../helpers/apiFeatures';
 import Tour from "../model/tour";
 
 export default class TourController  {
 
-    constructor() {
-        
+    public getTopTours(req : Request, res : Response, next : NextFunction) {
+
+        req.query.limit = "5";
+        req.query.sort = "-ratingAverage,price";
+        req.query.fields = 'name,price,ratingAverage,summary,difficulty';
+        next();
+    }
+
+    public async getTourStats(req : Request, res : Response) {
+
+        try {
+            const stats = await Tour.aggregate([
+                {
+                    $match: { ratingAverage: { $gte: 4.5 } }
+                },
+                {
+                    $group: {
+                        _id: null,
+                        numRatings: { $sum: '$ratingsQuantity' },
+                        numTours: { $sum: 1 },
+                        avgRating: { $avg: '$ratingsAverage' },
+                        avgPrice: { $avg: '$price' },
+                        minPrice: { $min: '$price' },
+                        maxPrice: { $max: '$price' }
+                    }
+                }
+            ]);
+
+            res.status(200).json({
+                status: 'success',
+                data: {
+                    stats
+                }
+            });
+
+        } catch (err) {
+            res.status(404).json({
+                status: "failed",
+                message: err.massage
+            });
+        }
     }
 
     /**
@@ -13,9 +53,13 @@ export default class TourController  {
     public async getAll(req : Request, res : Response) {
 
         try {
-            const tours = await Tour.find();
+            const features = new APIFeatures(Tour.find(), req.query)
+                .filter()
+                .sort()
+                .limitFields()
+                .paginate();
 
-            const queryObj =  {... req.query}
+            const tours = await features.query;
 
             res.status(200).json({
                 status: 'success',

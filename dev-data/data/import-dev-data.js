@@ -17,7 +17,7 @@ const tours = JSON.parse(fs.readFileSync(`${__dirname}/tours-simple.json`, 'utf-
 const importData = async () => {
     try {
         await Tour.create(tours);
-        console.log('Datta successfully loaded!');
+        console.log('Data successfully loaded!');
         process.exit();
     } catch (err) {
         console.log(err);
@@ -27,7 +27,7 @@ const importData = async () => {
 const deleteData = async () => {
     try {
         await Tour.deleteMany();
-        console.log('Datta successfully deleted!');
+        console.log('Data successfully deleted!');
         process.exit();
     } catch (err) {
         console.log(err);

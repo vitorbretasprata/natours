@@ -5,9 +5,8 @@ import tourController from "../controllers/tour";
 const controller = new tourController();
 const router = express.Router();
 
-router.param("id", (req, res, next, val) => {
-    next();
-});
+router.route("/top-5-cheap").get(controller.getTopTours, controller.getAll);
+router.route("/tour-stats").get(controller.getTourStats);
 
 router
     .route("/")
