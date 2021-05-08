@@ -1,4 +1,5 @@
-import mongoose from "mongoose";
+import mongoose, { NativeError } from "mongoose";
+import slugify from "slugify";
 
 const tourSchema = new mongoose.Schema({
     name: {
@@ -27,6 +28,7 @@ const tourSchema = new mongoose.Schema({
         type: Number,
         default: 0
     },
+    slug: String,
     price: {
         type: Number,
         required: [true, "A tour must have a price"]
@@ -57,6 +59,31 @@ const tourSchema = new mongoose.Schema({
         select: false
     },
     startDates: [Date]
+}, {
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true }
+});
+
+tourSchema.virtual('durationWeeks').get(function () {
+    return this.duration / 7;
+});
+
+tourSchema.pre('save', function (next) {
+    //this.slug = slugify(this.name, { lower: true });
+    next();
+});
+
+tourSchema.pre(/^find/, function (next) {
+
+    next();
+});
+
+tourSchema.pre('aggregate', function (next) {
+    //sd
+    next({
+        name: "",
+        message: ""
+    });
 });
 
 const Tour = mongoose.model("Tour", tourSchema);
