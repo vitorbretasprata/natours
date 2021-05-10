@@ -1,8 +1,16 @@
 import { NextFunction, Request, Response } from 'express';
 import APIFeatures from '../helpers/apiFeatures';
 import Tour from "../model/tour";
+import AppError from "../helpers/appError";
 
 export default class TourController  {
+
+
+    public catchAsync (fn : Function) {
+        return (req : Request, res : Response, next : NextFunction) => {
+            fn(req, res, next).catch(next);
+        }
+    }
 
     public getTopTours(req : Request, res : Response, next : NextFunction) {
 
@@ -12,9 +20,8 @@ export default class TourController  {
         next();
     }
 
-    public async getTourStats(req : Request, res : Response) {
-
-        try {
+    public async getTourStats() {
+        this.catchAsync(async (req : Request, res : Response, next : NextFunction) => {
             const stats = await Tour.aggregate([
                 {
                     $match: { ratingAverage: { $gte: 4.5 } }
@@ -41,19 +48,12 @@ export default class TourController  {
                     stats
                 }
             });
-
-        } catch (err) {
-            res.status(404).json({
-                status: "failed",
-                message: err.massage
-            });
-        }
+        });
     }
 
-    public async getMonthlyPlan(req : Request, res : Response) {
+    public async getMonthlyPlan() {
 
-        try {
-
+        this.catchAsync(async (req : Request, res : Response, next : NextFunction) => {
             const year = (typeof req.query.year === 'string') ? parseInt(req.query.year, 10) : new Date().getFullYear();
 
             const plan = await Tour.aggregate([
@@ -97,21 +97,14 @@ export default class TourController  {
                     plan
                 }
             });
-
-        } catch (err) {
-            res.status(404).json({
-                status: "failed",
-                message: err.massage
-            });
-        }
+        });
     }
 
     /**
      * name
      */
-    public async getAll(req : Request, res : Response) {
-
-        try {
+    public async getAll() {
+        this.catchAsync(async (req : Request, res : Response, next : NextFunction) => {
             const features = new APIFeatures(Tour.find(), req.query)
                 .filter()
                 .sort()
@@ -127,20 +120,14 @@ export default class TourController  {
                     tours
                 }
             });
-        } catch (err) {
-            res.status(404).json({
-                status: "failed",
-                message: err.massage
-            });
-        }
+        });
     }
 
     /**
      * name
      */
-    public async create(req : Request, res : Response) {
-
-        try {
+    public async create() {
+        this.catchAsync(async (req : Request, res : Response, next : NextFunction) => {
             const newTour = await Tour.create(req.body);
 
             res.status(201).json({
@@ -149,46 +136,19 @@ export default class TourController  {
                     id: newTour.id
                 }
             });
-        } catch (err) {
-            res.status(400).json({
-                status: "failed",
-                message: err.massage
-            });
-        }
+        });
     }
 
     /**
      * name
      */
-    public async get(req : Request, res : Response) {
+    public async get() {
+        this.catchAsync(async (req : Request, res : Response, next : NextFunction) => {
+            const tour = await Tour.findById(req.params.id);
 
-        try {
-            const tours = await Tour.findById(req.params.id);
-
-            res.status(200).json({
-                status: 'success',
-                data: { 
-                    tours
-                }
-            });
-        } catch (err) {
-            res.status(404).json({
-                status: "failed",
-                message: err.massage
-            });
-        }
-    }
-
-    /**
-     * name
-     */
-    public async update(req : Request, res : Response) {
-
-        try {
-            const tour = await Tour.findByIdAndUpdate(req.params.id, req.body, {
-                new: true,
-                runValidators: true
-            });
+            if(!tour) {
+                return next(new AppError("No tour found with that ID", 404));
+            }
 
             res.status(200).json({
                 status: 'success',
@@ -196,32 +156,50 @@ export default class TourController  {
                     tour
                 }
             });
-        } catch (err) {
-            res.status(404).json({
-                status: "failed",
-                message: err.massage
-            });
-        }
+        });
     }
 
     /**
      * name
      */
-    public async delete(req : Request, res : Response) {
+    public async update() {
 
-        try {
-            await Tour.findByIdAndDelete(req.params.id);
+        this.catchAsync(async (req : Request, res : Response, next : NextFunction) => {
+            const tour = await Tour.findByIdAndUpdate(req.params.id, req.body, {
+                new: true,
+                runValidators: true
+            });
+
+            if(!tour) {
+                return next(new AppError("No tour found with that ID", 404));
+            }
+
+            res.status(200).json({
+                status: 'success',
+                data: { 
+                    tour
+                }
+            });
+        });
+    }
+
+    /**
+     * name
+     */
+    public async delete() {
+
+        this.catchAsync(async (req : Request, res : Response, next : NextFunction) => {
+            const tour = await Tour.findByIdAndDelete(req.params.id);
+
+            if(!tour) {
+                return next(new AppError("No tour found with that ID", 404));
+            }
 
             res.status(204).json({
                 status: 'success',
                 data: null
             });
-        } catch (err) {
-            res.status(404).json({
-                status: "failed",
-                message: err.massage
-            });
-        }
+        });
     }
 
 }
