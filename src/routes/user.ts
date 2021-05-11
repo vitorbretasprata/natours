@@ -1,22 +1,27 @@
 import express from "express";
 
-import UserController from "../controllers/user";
+import AuthController from "../controllers/auth";
 
 const router = express.Router();
-const controller = new UserController();
+const authController = new AuthController();
 
-router.post("/signup", controller.signUp);
-router.post("/signin", controller.signIn);
+router.post("/signup", authController.signUp);
+router.post("/signin", authController.signIn);
+
+router.post("/forgotPassword", authController.forgotPassword);
+router.patch("/resetPassword", authController.resetPassword);
+
+router.patch("/updateMyPassword", authController.protect, authController.resetPassword);
 
 router
     .route("/")
-    .get(controller.signUp)
-    .post(controller.create)
+    .get(authController.signUp)
+    .post(authController.create)
 
 router
     .route("/:id")
-    .get(controller.get)
-    .patch(controller.update)
-    .delete(controller.delete)
+    .get(authController.get)
+    .patch(authController.update)
+    .delete(authController.delete)
 
 export default router;

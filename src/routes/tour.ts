@@ -1,7 +1,7 @@
 import express from "express";
 
 import TourController from "../controllers/tour";
-import AuthController from "../controllers/user";
+import AuthController from "../controllers/auth";
 
 
 const controller = new TourController();

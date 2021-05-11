@@ -1,12 +1,13 @@
 import mongoose, { NativeError, Model, Document, HookNextFunction } from "mongoose";
 import validator from "validator";
 import bcrypt from "bcryptjs";
+import crypto from "crypto";
 
 interface IUserSchema extends Model<any, any> {
     correctPassword: Function
 }
 
-const userSchema = new mongoose.Schema<UserBaseDocument, any>({
+const userSchema = new mongoose.Schema<UserBaseDocument, UserModel>({
     name: {
         type: String,
         required: [true, "Please provide your name."],
@@ -48,7 +49,9 @@ const userSchema = new mongoose.Schema<UserBaseDocument, any>({
         enum: ['user', 'guide', 'lead-guide', 'admin'],
         default: 'user'
     },
-    passwordChangedAt: Date
+    passwordChangedAt: Date,
+    passwordResetToken: String,
+    passwordResetExpires: Date
 }, {
     toJSON: { virtuals: true },
     toObject: { virtuals: true }
@@ -68,12 +71,19 @@ export interface IUser {
     password: string,
     passwordConfirm: string,
     role: Role,
-    passwordChangedAt? : Date
+    passwordChangedAt? : Date,
+    passwordResetToken? : String,
+    passwordResetExpires? : Date
 }
 
 export interface UserBaseDocument extends IUser, Document {
     correctPassword(candidatePassword : string, userPassword : string) : string,
-    changedPasswordAfter(JWTTimeStamp: string) : boolean
+    changedPasswordAfter(JWTTimeStamp: string) : boolean,
+    createPasswordResetToken() : string
+}
+
+export interface UserModel extends Model<UserBaseDocument> {
+
 }
 
 userSchema.virtual('durationWeeks').get(function () {
@@ -86,6 +96,13 @@ userSchema.pre('save', async function (this: UserBaseDocument, next) {
     this.password = await bcrypt.hash(this.password, 12);
     this.passwordConfirm = undefined;
     
+    next();
+});
+
+userSchema.pre('save', async function (this: UserBaseDocument, next) {
+    if(!this.isModified("password") || this.isNew) return next();
+
+    this.passwordChangedAt = new Date(Date.now() - 1000);
     next();
 });
 
@@ -109,6 +126,19 @@ userSchema.methods.changedPasswordAfter = function (this: UserBaseDocument,
     return false;
 }
 
+userSchema.methods.createPasswordResetToken = function () {
+    const resetToken = crypto.randomBytes(32).toString('hex');
+
+    this.passwordResetToken = crypto
+        .createHash('sha256')
+        .update(resetToken)
+        .digest('hex');
+
+    this.passwordResetExpires = new Date(Date.now() + 10 * 60 * 1000);
+
+    return resetToken;
+}
+
 userSchema.pre(/^find/, function (next) {
 
     next();
@@ -122,6 +152,6 @@ userSchema.pre('aggregate', function (next) {
     });
 });
 
-const User = mongoose.model<UserBaseDocument, any>("Tour", userSchema);
+const User = mongoose.model<UserBaseDocument, UserModel>("Tour", userSchema);
 
 export default User;
