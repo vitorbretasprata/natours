@@ -49,6 +49,14 @@ export default class ErrorController  {
         }
     }
 
+    private handleHandleJsonWebTokenError() {
+        return new AppError("Invalid token, please login again", 401);
+    }
+
+    private handleHandleTokenExpiredError() {
+        return new AppError("Token expired, please login again", 401);
+    }
+
     public globalErrorHandler(err : { [key: string] : any }, req : Request, res : Response, next : NextFunction) {
 
         err.statusCode = err.statusCode || 500;
@@ -61,6 +69,8 @@ export default class ErrorController  {
             if(error.name === "CastError") error = this.handleCastErrorDB(error);
             if(error.code === 11000) error = this.handleDuplicateFieldsDB(error);
             if(error.name === "ValidationError") error = this.handleHandleValidationErrorDB(error);
+            if(error.name === "JsonWebTokenError") error = this.handleHandleJsonWebTokenError();
+            if(error.name === "TokenExpiredError") error = this.handleHandleTokenExpiredError();
 
             this.sendErrorProd(error, res);
         }

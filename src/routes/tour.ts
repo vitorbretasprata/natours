@@ -1,8 +1,11 @@
 import express from "express";
 
-import tourController from "../controllers/tour";
+import TourController from "../controllers/tour";
+import AuthController from "../controllers/user";
 
-const controller = new tourController();
+
+const controller = new TourController();
+const authController = new AuthController();
 const router = express.Router();
 
 router.route("/top-5-cheap").get(controller.getTopTours, controller.getAll);
@@ -11,7 +14,7 @@ router.route("/get-monthly-plan/:year").get(controller.getTourStats);
 
 router
     .route("/")
-    .get(controller.getAll)
+    .get(authController.protect, controller.getAll)
     .post(controller.create)
 
 router

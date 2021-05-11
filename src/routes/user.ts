@@ -5,9 +5,12 @@ import UserController from "../controllers/user";
 const router = express.Router();
 const controller = new UserController();
 
+router.post("/signup", controller.signUp);
+router.post("/signin", controller.signIn);
+
 router
     .route("/")
-    .get(controller.getAll)
+    .get(controller.signUp)
     .post(controller.create)
 
 router
