@@ -8,12 +8,23 @@ interface RequestBody extends Request {
     user? : any
 }
 
-export default class AuthController  {
+export default class UserController  {
 
     private catchAsync (fn : Function) {
         return (req : Request, res : Response, next : NextFunction) => {
             fn(req, res, next).catch(next);
         }
+    }
+
+    private filterOjb(obj : any, ...allowedFields: Array<string>) {
+        const newObj : { [key : string] : any } = {};
+        Object.keys(obj).forEach(el => {
+            if(allowedFields.includes(el)) {
+                newObj[el] = obj[el];
+            }
+        });
+
+        return newObj;
     }
 
     public getAll() {
@@ -59,10 +70,27 @@ export default class AuthController  {
     /**
      * name
      */
-    public update(req : Request, res : Response, next : NextFunction) {
-        res.status(201).json({
-            status: 'success',
-            message: "This functionallity is not complete yet."
+    public update(req : RequestBody, res : Response, next : NextFunction) {
+
+        this.catchAsync(async (req : RequestBody, res : Response, next : NextFunction) => {
+            //1 - Create error if POSTs password data
+            if(req.body.password || req.body.passwordConfirm) {
+                return next(new AppError("This route is not for password updates.", 400));
+            }
+
+            //2 - Filtered unwanted fields
+            const filteredBody = this.filterOjb(req.body, 'name', 'email');
+
+            //3 - Update user document
+            const user = await User.findByIdAndUpdate(req.user.id, filteredBody, {
+                new: true,
+                runValidators: true
+            });
+
+            res.status(200).json({
+                status: 'success',
+                data: { user }
+            });
         });
     }
 
@@ -70,9 +98,13 @@ export default class AuthController  {
      * name
      */
     public delete(req : Request, res : Response, next : NextFunction) {
-        res.status(204).json({
-            status: 'success',
-            message: "This functionallity is not complete yet."
+        this.catchAsync(async (req : RequestBody, res : Response, next : NextFunction) => {
+
+            await User.findByIdAndUpdate(req.user.id, { active: false });
+
+            res.status(204).json({
+                status: 'success',
+            });
         });
     }
 

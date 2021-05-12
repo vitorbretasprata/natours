@@ -51,7 +51,12 @@ const userSchema = new mongoose.Schema<UserBaseDocument, UserModel>({
     },
     passwordChangedAt: Date,
     passwordResetToken: String,
-    passwordResetExpires: Date
+    passwordResetExpires: Date,
+    active: {
+        type: Boolean,
+        default: true,
+        select: false
+    }
 }, {
     toJSON: { virtuals: true },
     toObject: { virtuals: true }
@@ -73,7 +78,8 @@ export interface IUser {
     role: Role,
     passwordChangedAt? : Date,
     passwordResetToken? : String,
-    passwordResetExpires? : Date
+    passwordResetExpires? : Date,
+    active: boolean
 }
 
 export interface UserBaseDocument extends IUser, Document {
@@ -139,8 +145,8 @@ userSchema.methods.createPasswordResetToken = function () {
     return resetToken;
 }
 
-userSchema.pre(/^find/, function (next) {
-
+userSchema.pre(/^find/, function (this: Model<UserBaseDocument>, next) {
+    this.find({ active: true }); 
     next();
 });
 

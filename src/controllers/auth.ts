@@ -2,13 +2,18 @@ import { promisify } from "util";
 import crypto from "crypto";
 import { Request, Response, NextFunction } from 'express';
 import User, { UserBaseDocument } from "../model/user";
-import jwt from "jsonwebtoken";
+import jwt, { SigningKeyCallback } from "jsonwebtoken";
 import AppError from "../helpers/appError";
 import sendEmail from "../helpers/email";
 
 interface RequestBody extends Request {
     body: any
     user? : any
+}
+
+interface IToken extends SigningKeyCallback {
+    iat? : string,
+    id? : number | string
 }
 
 export default class AuthController  {
@@ -27,6 +32,16 @@ export default class AuthController  {
 
     private createSendToken (user : UserBaseDocument, code : number, res : Response) {
         const token = this.signToken(user._id);
+
+        const cookieOptions : { [key : string] : any } = {
+            expires: new Date(Date.now() + process.env.JWT_COOKIE_EXPIRES_IN * 24 * 60 * 60 * 1000),
+            httpOnly: true
+        }
+
+        if(process.env.NODE_ENV === "production") cookieOptions.secure = true;
+        res.cookie("jwt", token, cookieOptions);
+
+        user.password = undefined;
 
         res.status(code).json({
             status: 'success',
@@ -63,7 +78,7 @@ export default class AuthController  {
                 return next(new AppError("You are not logged in! Please log in to get access", 401));
             }
 
-            const decoded = await promisify(jwt.verify)(token, process.env.JWT_SECRET);
+            const decoded : IToken = await promisify(jwt.verify)(token, process.env.JWT_SECRET);
 
             const freshUser : UserBaseDocument = await User.findById(decoded.id);
 
