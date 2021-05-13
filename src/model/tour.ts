@@ -1,7 +1,7 @@
-import mongoose, { NativeError } from "mongoose";
-import validator from "validator";
+import mongoose, { Model, Document } from "mongoose";
+import User from "./user";
 
-const tourSchema = new mongoose.Schema({
+const tourSchema = new mongoose.Schema<TourBaseDocument, TourModel>({
     name: {
         type: String,
         required: [true, "A tour must have a name"],
@@ -65,7 +65,7 @@ const tourSchema = new mongoose.Schema({
         type: String,
         require: [true, "A tour must have a cover image"]
     },
-    images: {
+    tourImages: {
         type: [String]
     },
     createdAt: {
@@ -96,34 +96,102 @@ const tourSchema = new mongoose.Schema({
             description: String,
             day: Number
         }
+    ],
+    guides: [
+        {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'User'
+        }
     ]
 }, {
     toJSON: { virtuals: true },
     toObject: { virtuals: true }
 });
 
+enum Difficulty {
+    "easy" = 0,
+    "medium" = 1,
+    "difficult" = 2,
+}
+
+export interface ILocations {
+    type: string,
+    coordinates? : Array<number>,
+    address? : string,
+    description? : string,
+    day? : number
+}
+
+export interface ITours {
+    name: string,
+    duration: number,
+    maxGroupSize : number,
+    priceDiscount: number,
+    passwordConfirm: string,
+    difficulty? : Difficulty,
+    ratingAverage? : Date,
+    ratingQuantity? : String,
+    slug? : Date,
+    price : number,
+    summery : string,
+    description? : string,
+    imageCover : string,
+    tourImages? : Array<string>,
+    createdAt: Date,
+    startDates: Array<Date>,
+    startLocation: {
+        type: string,
+        coordinates: Array<number>,
+        address? : string,
+        description? : string
+    },
+    locations: Array<ILocations>,
+    guides: [
+        {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'User'
+        }
+    ]
+}
+
+export interface TourBaseDocument extends ITours, Document {
+    
+}
+
+export interface TourModel extends Model<TourBaseDocument> {
+
+}
+
 tourSchema.virtual('durationWeeks').get(function () {
     return this.duration / 7;
 });
 
+// Virtual populate
+tourSchema.virtual('reviews', {
+    ref: 'Review',
+    foreignField: 'tour',
+    localField: '_id'
+});
+
 tourSchema.pre('save', function (next) {
-    //this.slug = slugify(this.name, { lower: true });
     next();
 });
 
 tourSchema.pre(/^find/, function (next) {
-
+    this.populate({
+        path : 'guides',
+        select: '-__v -passwordChangedAt'
+    })
     next();
 });
 
 tourSchema.pre('aggregate', function (next) {
-    //sd
     next({
         name: "",
         message: ""
     });
 });
 
-const Tour = mongoose.model("Tour", tourSchema);
+const Tour = mongoose.model<TourBaseDocument, TourModel>("Tour", tourSchema);
 
 export default Tour;

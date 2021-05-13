@@ -8,6 +8,7 @@ import hpp from "hpp";
 
 import tourRouter from "./src/routes/tour";
 import userRouter from "./src/routes/user";
+import reviewRouter from "./src/routes/review";
 
 import AppError from "./src/helpers/appError";
 import ErrorController from "./src/controllers/error";
@@ -57,6 +58,7 @@ if(process.env.NODE_ENV === "development") {
 
 app.use("/api/v1/tours", tourRouter);
 app.use("/api/v1/users", userRouter);
+app.use("/api/v1/reviews", reviewRouter);
 
 app.all('*', (req, res, next) => {
     next(new AppError(`Can't find ${req.originalUrl} on this server`, 404));
