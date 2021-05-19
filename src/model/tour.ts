@@ -41,7 +41,8 @@ const tourSchema = new mongoose.Schema<TourBaseDocument, TourModel>({
         type: Number,
         default: 4.5,
         min: [1, 'Rating must be at least 1'],
-        max: [5, 'Rating must be less or equal to 5']
+        max: [5, 'Rating must be less or equal to 5'],
+        set: (val : number) => Math.round(val * 10) / 10
     },
     ratingQuantity: {
         type: Number,
@@ -176,6 +177,9 @@ tourSchema.virtual('reviews', {
 tourSchema.pre('save', function (next) {
     next();
 });
+
+tourSchema.index({ price: 1, ratingsAverage: -1 });
+tourSchema.index({ slug: 1 });
 
 tourSchema.pre(/^find/, function (next) {
     this.populate({

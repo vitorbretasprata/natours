@@ -2,13 +2,19 @@ import { Request, Response, NextFunction } from 'express';
 import User, { UserBaseDocument } from "../model/user";
 import AppError from "../helpers/appError";
 import sendEmail from "../helpers/email";
-
+import HandlerFactory from "./handlerFactory";
 interface RequestBody extends Request {
     body: any
     user? : any
 }
 
 export default class UserController  {
+
+    public factory;
+
+    constructor () {
+        this.factory = new HandlerFactory();
+    }
 
     private catchAsync (fn : Function) {
         return (req : Request, res : Response, next : NextFunction) => {
@@ -50,11 +56,9 @@ export default class UserController  {
     /**
      * name
      */
-    public create(req : Request, res : Response, next : NextFunction) {
-        res.status(201).json({
-            status: 'success',
-            message: "This functionallity is not complete yet."
-        });
+    public getMe(req : RequestBody, res : Response, next : NextFunction) {
+        req.params.id = req.user.id;
+        next();
     }
 
     /**
@@ -98,14 +102,7 @@ export default class UserController  {
      * name
      */
     public delete(req : Request, res : Response, next : NextFunction) {
-        this.catchAsync(async (req : RequestBody, res : Response, next : NextFunction) => {
-
-            await User.findByIdAndUpdate(req.user.id, { active: false });
-
-            res.status(204).json({
-                status: 'success',
-            });
-        });
+        this.factory.deleteOne(User)
     }
 
 }

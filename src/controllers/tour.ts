@@ -3,8 +3,15 @@ import APIFeatures from '../helpers/apiFeatures';
 import Tour from "../model/tour";
 import AppError from "../helpers/appError";
 
+import HandlerFactory from "./handlerFactory";
+
 export default class TourController  {
 
+    public factory;
+
+    constructor () {
+        this.factory = new HandlerFactory();
+    }
 
     public catchAsync (fn : Function) {
         return (req : Request, res : Response, next : NextFunction) => {
@@ -127,16 +134,7 @@ export default class TourController  {
      * name
      */
     public async create() {
-        this.catchAsync(async (req : Request, res : Response, next : NextFunction) => {
-            const newTour = await Tour.create(req.body);
-
-            res.status(201).json({
-                status: 'success',
-                data: {
-                    id: newTour.id
-                }
-            });
-        });
+        this.factory.createOne(Tour);
     }
 
     /**
@@ -163,43 +161,18 @@ export default class TourController  {
      * name
      */
     public async update() {
-
-        this.catchAsync(async (req : Request, res : Response, next : NextFunction) => {
-            const tour = await Tour.findByIdAndUpdate(req.params.id, req.body, {
-                new: true,
-                runValidators: true
-            });
-
-            if(!tour) {
-                return next(new AppError("No tour found with that ID", 404));
-            }
-
-            res.status(200).json({
-                status: 'success',
-                data: { 
-                    tour
-                }
-            });
-        });
+        this.factory.updateOne(Tour);
     }
 
     /**
      * name
      */
     public async delete() {
+        this.factory.deleteOne(Tour);
+    }
 
-        this.catchAsync(async (req : Request, res : Response, next : NextFunction) => {
-            const tour = await Tour.findByIdAndDelete(req.params.id);
-
-            if(!tour) {
-                return next(new AppError("No tour found with that ID", 404));
-            }
-
-            res.status(204).json({
-                status: 'success',
-                data: null
-            });
-        });
+    public async getToursWithin(req : Request, res : Response, next : NextFunction) {
+        const { distance, latlng, unit } = req.params;
     }
 
 }

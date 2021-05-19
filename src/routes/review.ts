@@ -5,12 +5,17 @@ import AuthController from "../controllers/auth";
 
 const controller = new ReviewController();
 const authController = new AuthController();
-const router = express.Router();
+const router = express.Router({ mergeParams: true });
 
 router
     .route("/")
     .get(authController.protect, controller.getAll)
-    .post(authController.protect, authController.restrictTo('user'), controller.create)
+    .post(
+        authController.protect, 
+        authController.restrictTo('user'), 
+        controller.setToursUserId, 
+        controller.create
+    );
 
 router
     .route("/:id")
