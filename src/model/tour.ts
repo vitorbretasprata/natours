@@ -180,6 +180,7 @@ tourSchema.pre('save', function (next) {
 
 tourSchema.index({ price: 1, ratingsAverage: -1 });
 tourSchema.index({ slug: 1 });
+tourSchema.index({ startLocation: '2dsphere' });
 
 tourSchema.pre(/^find/, function (next) {
     this.populate({
@@ -187,13 +188,6 @@ tourSchema.pre(/^find/, function (next) {
         select: '-__v -passwordChangedAt'
     })
     next();
-});
-
-tourSchema.pre('aggregate', function (next) {
-    next({
-        name: "",
-        message: ""
-    });
 });
 
 const Tour = mongoose.model<TourBaseDocument, TourModel>("Tour", tourSchema);

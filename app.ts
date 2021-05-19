@@ -1,3 +1,4 @@
+import path from "path";
 import express from "express";
 import morgan from "morgan";
 import rateLimit from "express-rate-limit";
@@ -14,6 +15,10 @@ import AppError from "./src/helpers/appError";
 import ErrorController from "./src/controllers/error";
 
 const app = express();
+
+app.set('view engine', 'pug');
+app.set('views', path.join(__dirname, 'views'));
+
 const globalError = new ErrorController();
 
 //Set security HTTP headers
@@ -50,11 +55,16 @@ app.use(hpp({
 }));
 
 //Serving static files
-app.use(express.static(`${__dirname}/public`));
+app.use(express.static(path.join(__dirname, 'public')));
 
 if(process.env.NODE_ENV === "development") {
     app.use(morgan("dev"));
 }
+
+// 3 - ROUTES
+app.get('/', (req, res) => {
+    res.status(200).render('base');
+});
 
 app.use("/api/v1/tours", tourRouter);
 app.use("/api/v1/users", userRouter);

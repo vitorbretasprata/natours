@@ -18,7 +18,8 @@ router.route("/get-monthly-plan/:year")
         controller.getTourStats
     );
 
-router.route('/tours-within/:distance/center/:latlng/unit/:unit', controller.getToursWithin);
+router.route('/tours-within/:distance/center/:latlng/unit/:unit').get(controller.getToursWithin);
+router.route('/distances/:latlng/unit/:unit').get(controller.getDistances);
 
 router
     .route("/")

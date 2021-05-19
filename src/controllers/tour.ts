@@ -171,8 +171,72 @@ export default class TourController  {
         this.factory.deleteOne(Tour);
     }
 
-    public async getToursWithin(req : Request, res : Response, next : NextFunction) {
-        const { distance, latlng, unit } = req.params;
+    public async getToursWithin() {
+        this.catchAsync(async (req : Request, res : Response, next : NextFunction) => {
+            const { distance, latlng, unit } = req.params;
+            const [lat, lng] = latlng.split(',');
+
+            const intDis = parseInt(distance, 10);
+
+            const radius = unit === 'mi' ? intDis / 3963.2 : intDis / 6378.1;
+
+            if(!lat || !lng) {
+                next(new AppError("Please provide latitutr and longitude in the format lat,lng", 400));
+            }
+
+            const tours = await Tour.find({
+                startLocation: {
+                    $geoWithin: {
+                        $centerSphere: [[lng, lat], radius]
+                    }
+                }
+            });
+
+            res.status(200).json({
+                status: 'success',
+                results: tours.length,
+                data: { tours }
+            });
+        });
     }
 
+    public async getDistances() {
+        this.catchAsync(async (req : Request, res : Response, next : NextFunction) => {
+            const { latlng, unit } = req.params;
+            const [lat, lng] = latlng.split(',');
+
+            const multiplier = unit === 'mi' ? 0.000621371 : 0.001;
+
+            const intLat = parseInt(lat, 10);
+            const intLng = parseInt(lng, 10);
+
+            if(!lat || !lng) {
+                next(new AppError("Please provide latitutr and longitude in the format lat,lng", 400));
+            }
+
+            const distances = await Tour.aggregate([
+                {
+                    $geoNear: { 
+                        near: { 
+                            type: 'Point',
+                            coordinates: [intLng, intLat]
+                        },
+                        distanceField: 'distance',
+                        distanceMultiplier: multiplier
+                    }
+                },
+                {
+                    $project: {
+                        distance: 1,
+                        name: 1
+                    }
+                }
+            ]);
+
+            res.status(200).json({
+                status: 'success',
+                data: { distances }
+            });
+        });
+    }
 }
