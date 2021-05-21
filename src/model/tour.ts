@@ -132,7 +132,7 @@ export interface ITours {
     difficulty? : Difficulty,
     ratingAverage? : Date,
     ratingQuantity? : String,
-    slug? : Date,
+    slug? : String,
     price : number,
     summery : string,
     description? : string,

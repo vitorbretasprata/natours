@@ -6,10 +6,12 @@ import helmet from "helmet";
 import mongoSanitize from "express-mongo-sanitize";
 import xss from "xss-clean";
 import hpp from "hpp";
+import cookieParser from "cookie-parser";
 
 import tourRouter from "./src/routes/tour";
 import userRouter from "./src/routes/user";
 import reviewRouter from "./src/routes/review";
+import viewsRouter from "./src/routes/views";
 
 import AppError from "./src/helpers/appError";
 import ErrorController from "./src/controllers/error";
@@ -35,6 +37,7 @@ app.use("/api", limiter);
 
 //Body parser
 app.use(express.json({ limit: '10kb' }));
+app.use(cookieParser());
 
 //Data sanitization against NoSQL query injection
 app.use(mongoSanitize());
@@ -62,10 +65,8 @@ if(process.env.NODE_ENV === "development") {
 }
 
 // 3 - ROUTES
-app.get('/', (req, res) => {
-    res.status(200).render('base');
-});
 
+app.use("/", viewsRouter);
 app.use("/api/v1/tours", tourRouter);
 app.use("/api/v1/users", userRouter);
 app.use("/api/v1/reviews", reviewRouter);

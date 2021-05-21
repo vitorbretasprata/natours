@@ -24,29 +24,47 @@ export default class ErrorController  {
         return new AppError(message, 400);
     }
 
-    private sendErrorDev (err : { [key: string] : any }, res : Response) {
-        res.status(err.statusCode).json({
-            status: err.status,
-            message: err.message,
-            error: err,
-            stack: err.stack
+    private sendErrorDev (err : { [key: string] : any }, req: Request, res : Response) {
+        if(req.originalUrl.startsWith('/api')) {
+            return res.status(err.statusCode).json({
+                status: err.status,
+                message: err.message,
+                error: err,
+                stack: err.stack
+            });
+        } 
+
+        return res.status(err.statusCode).render('error', {
+            title: 'Something went wrong',
+            msg: err.message
         });
     }
 
-    private sendErrorProd (err : { [key: string] : any }, res : Response) {
-        if(err.isOperational) {
-            res.status(err.statusCode).json({
-                status: err.status,
-                message: err.message
-            });
-        } else {
-            console.error("ERROR: ", err);
- 
-            res.status(500).json({
+    private sendErrorProd (err : { [key: string] : any }, req: Request, res : Response) {
+        // API
+        if(req.originalUrl.startsWith('/api')) {
+
+            // If the error is created by the dev (trusted error)
+            if(err.isOperational) {
+                res.status(err.statusCode).json({
+                    status: err.status,
+                    message: err.message
+                });
+            }
+
+            // Programming or unknown error - don't leak error details
+
+            return res.status(500).json({
                 status: "error",
                 message: "Something went very wrong"
             })
         }
+
+        // Rendered website
+        return res.status(err.statusCode).render('error', {
+            title: 'Something went wrong',
+            msg: 'Please try again later'
+        });
     }
 
     private handleHandleJsonWebTokenError() {
@@ -63,7 +81,7 @@ export default class ErrorController  {
         err.status = err.status || 'error';
 
         if(process.env.NODE_ENV == "development") {
-            this.sendErrorDev(err, res);
+            this.sendErrorDev(err, req, res);
         } else if (process.env.NODE_ENV == "production") {
             let error = { ...err }
             if(error.name === "CastError") error = this.handleCastErrorDB(error);
@@ -72,7 +90,7 @@ export default class ErrorController  {
             if(error.name === "JsonWebTokenError") error = this.handleHandleJsonWebTokenError();
             if(error.name === "TokenExpiredError") error = this.handleHandleTokenExpiredError();
 
-            this.sendErrorProd(error, res);
+            this.sendErrorProd(error, req, res);
         }
 
     }

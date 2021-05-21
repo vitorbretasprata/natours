@@ -72,6 +72,8 @@ export default class AuthController  {
                 req.headers.authorization.startsWith("Bearer")
             ) {
                 token = req.headers.authorization.split(' ')[1];
+            } else if(req.cookies.jwt) {
+                token = req.cookies.jwt;
             }
 
             if(!token) {
@@ -80,21 +82,53 @@ export default class AuthController  {
 
             const decoded : IToken = await promisify(jwt.verify)(token, process.env.JWT_SECRET);
 
-            const freshUser : UserBaseDocument = await User.findById(decoded.id);
+            const currentUser : UserBaseDocument = await User.findById(decoded.id);
 
-            if(!freshUser) {
+            if(!currentUser) {
                 return next(new AppError('The user beloging to this token does not longer exist', 401));
             }
 
-            if(freshUser.changedPasswordAfter(decoded.iat)) {
+            if(currentUser.changedPasswordAfter(decoded.iat)) {
                 return next(
                     new AppError('User recently changed password! Pleade log in again.', 401)
                 );
             }
 
-            req.user = freshUser;
+            res.locals.user = currentUser;
+            req.user = currentUser;
             next();
         });
+    }
+
+
+    /**
+     * name
+     */
+    public async isLoggedIn(req : RequestBody, res : Response, next : NextFunction) {
+
+        if(req.cookies.jwt) {
+            try {
+                const decoded : IToken = await promisify(jwt.verify)(req.cookies.jwt, process.env.JWT_SECRET);
+
+                const currentUser : UserBaseDocument = await User.findById(decoded.id);
+
+                if(!currentUser) {
+                    return next();
+                }
+
+                if(currentUser.changedPasswordAfter(decoded.iat)) {
+                    return next();
+                }
+
+                res.locals.user = currentUser;
+                next();
+            } catch (error) {
+                return next();
+            }
+
+        }
+
+        next();
     }
 
 
@@ -127,6 +161,17 @@ export default class AuthController  {
             }
 
             this.createSendToken(user, 200, res);
+        });
+    }
+
+    public logout(req : Request, res : Response, next : NextFunction) {
+        res.cookie('jwt', '', {
+            expires: new Date(Date.now() + 10 * 1000),
+            httpOnly: true
+        });
+
+        res.status(200).json({
+            status: 'success'
         });
     }
 

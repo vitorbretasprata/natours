@@ -8,6 +8,8 @@ const userController = new UserController();
 
 router.post("/signup", authController.signUp);
 router.post("/signin", authController.signIn);
+router.get('/logout', authController.logout);
+
 router.post("/forgotPassword", authController.forgotPassword);
 router.patch("/resetPassword/:token", authController.resetPassword);
 
